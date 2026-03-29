@@ -102,6 +102,9 @@ unsigned char escchar( const unsigned char ch );
 bool get_extended_line( const char ** const ibufpp, int * const lenp,
                         const bool strip_escaped_newlines );
 const char * get_stdin_line( int * const sizep );
+const char * get_tty_line( int * const sizep, const char * const prompt );
+void init_readline( void );
+void cleanup_readline( void );
 unsigned linenum( void );
 bool print_lines( int from, const int to, const int pflags );
 int read_file( const char * const filename, const int addr,

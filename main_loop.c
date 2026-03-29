@@ -824,8 +824,7 @@ int main_loop( const bool initial_error, const bool loose )
     {
     fflush( stdout ); fflush( stderr );
     if( status < 0 && verbose ) { printf( "%s\n", errmsg ); fflush( stdout ); }
-    if( prompt_on ) { fputs( prompt_str, stdout ); fflush( stdout ); }
-    ibufp = get_stdin_line( &len );
+    ibufp = get_tty_line( &len, prompt_on ? prompt_str : 0 );
     if( !ibufp ) return 2;			/* an error happened */
     if( len <= 0 )				/* EOF on stdin ('q') */
       {

@@ -26,6 +26,7 @@ CPPFLAGS=
 CFLAGS='-Wall -W -O2'
 LDFLAGS=
 MAKEINFO=makeinfo
+with_readline=auto
 
 # checking whether we are using GNU C.
 /bin/sh -c "${CC} --version" > /dev/null 2>&1 || { CC=cc ; CFLAGS=-O2 ; }
@@ -73,6 +74,8 @@ while [ $# != 0 ] ; do
 		echo "  CFLAGS+=OPTIONS       append options to the current value of CFLAGS"
 		echo "  LDFLAGS=OPTIONS       command-line options for the linker [${LDFLAGS}]"
 		echo "  MAKEINFO=NAME         makeinfo program to use [${MAKEINFO}]"
+		echo "  --with-readline       enable readline support [auto]"
+		echo "  --without-readline    disable readline support"
 		echo
 		exit 0 ;;
 	--version | -V)
@@ -96,6 +99,8 @@ while [ $# != 0 ] ; do
 	--mandir=*)            mandir=${optarg} ;;
 	--program-prefix=*) program_prefix=${optarg} ;;
 	--no-create)              no_create=yes ;;
+	--with-readline)          with_readline=yes ;;
+	--without-readline)       with_readline=no ;;
 
 	CC=*)              CC=${optarg} ;;
 	CPPFLAGS=*)  CPPFLAGS=${optarg} ;;
@@ -139,6 +144,48 @@ fi
 
 # Set srcdir to . if that's what it is.
 if [ "`pwd`" = "`cd "${srcdir}" ; pwd`" ] ; then srcdir=. ; fi
+
+# Detect readline
+READLINE_CFLAGS=
+READLINE_LIBS=
+
+if [ "${with_readline}" != no ] ; then
+	# Try pkg-config first
+	if command -v pkg-config > /dev/null 2>&1 && \
+	   pkg-config --exists readline 2>/dev/null ; then
+		READLINE_CFLAGS=$(pkg-config --cflags readline)
+		READLINE_LIBS=$(pkg-config --libs readline)
+		with_readline=yes
+	# Try Homebrew location (macOS)
+	elif [ -f /opt/homebrew/opt/readline/include/readline/readline.h ] ; then
+		READLINE_CFLAGS="-I/opt/homebrew/opt/readline/include"
+		READLINE_LIBS="-L/opt/homebrew/opt/readline/lib -lreadline"
+		with_readline=yes
+	# Try /usr/local (Intel Mac Homebrew or manual install)
+	elif [ -f /usr/local/include/readline/readline.h ] ; then
+		READLINE_CFLAGS="-I/usr/local/include"
+		READLINE_LIBS="-L/usr/local/lib -lreadline"
+		with_readline=yes
+	# Try system readline
+	elif printf '#include <readline/readline.h>\nint main(){readline("");return 0;}' | \
+	     ${CC} -x c - -lreadline -o /dev/null 2>/dev/null ; then
+		READLINE_LIBS="-lreadline"
+		with_readline=yes
+	elif [ "${with_readline}" = yes ] ; then
+		echo "configure: error: readline library not found" 1>&2
+		exit 1
+	else
+		with_readline=no
+	fi
+fi
+
+if [ "${with_readline}" = yes ] ; then
+	CPPFLAGS="${CPPFLAGS} -DHAVE_READLINE ${READLINE_CFLAGS}"
+	LDFLAGS="${LDFLAGS} ${READLINE_LIBS}"
+	echo "readline support: yes"
+else
+	echo "readline support: no"
+fi
 
 echo
 if [ -z "${no_create}" ] ; then

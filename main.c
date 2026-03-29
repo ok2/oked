@@ -275,6 +275,7 @@ int main( const int argc, const char * const argv[] )
 
   setlocale( LC_ALL, "" );
   if( !init_buffers() ) return 1;
+  init_readline();
 
   const char * start_re_arg = 0;		/* '+/RE' or '+?RE' */
   int start_addr = 0;				/* '+line' */
@@ -321,5 +322,7 @@ int main( const int argc, const char * const argv[] )
     break;		/* extra arguments after file are ignored */
     }
   ap_free( &parser );
-  return main_loop( initial_error, loose );
+  const int ret = main_loop( initial_error, loose );
+  cleanup_readline();
+  return ret;
   }

@@ -19,7 +19,14 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#ifdef HAVE_READLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
 
 #include "ed.h"
 
@@ -189,6 +196,81 @@ const char * get_stdin_line( int * const sizep )
       return buf;
       }
     }
+  }
+
+
+/* Read a line of text from the terminal using readline if available.
+   Add non-empty command lines to history.
+   Return pointer to buffer and line size (including trailing newline),
+   or 0 if error, or *sizep = 0 if EOF.
+*/
+const char * get_tty_line( int * const sizep, const char * const prompt )
+  {
+#ifdef HAVE_READLINE
+  if( isatty( 0 ) )
+    {
+    static char * buf = 0;
+    static int bufsz = 0;
+    char * line = readline( prompt );
+    if( !line )				/* EOF */
+      {
+      if( !resize_buffer( &buf, &bufsz, 2 ) ) { *sizep = 0; return 0; }
+      buf[0] = 0; *sizep = 0; return buf;
+      }
+    const int len = strlen( line );
+    if( !resize_buffer( &buf, &bufsz, len + 2 ) )
+      { free( line ); *sizep = 0; return 0; }
+    memcpy( buf, line, len );
+    buf[len] = '\n'; buf[len + 1] = 0;
+    if( len > 0 ) add_history( line );
+    free( line );
+    ++linenum_;
+    *sizep = len + 1;
+    return buf;
+    }
+#endif
+  /* fallback: print prompt and use getchar loop */
+  if( prompt ) { fputs( prompt, stdout ); fflush( stdout ); }
+  return get_stdin_line( sizep );
+  }
+
+
+static const char * history_path( void )
+  {
+  static char * path = 0;
+  if( !path )
+    {
+    const char * const hd = home_directory();
+    if( !hd || !hd[0] ) return 0;
+    const int hdlen = strlen( hd );
+    const char hist[] = "/.ed_history";
+    path = (char *)malloc( hdlen + sizeof hist );
+    if( !path ) return 0;
+    memcpy( path, hd, hdlen );
+    memcpy( path + hdlen, hist, sizeof hist );
+    }
+  return path;
+  }
+
+
+void init_readline( void )
+  {
+#ifdef HAVE_READLINE
+  rl_readline_name = "ed";
+  using_history();
+  stifle_history( 1000 );
+  const char * const hp = history_path();
+  if( hp ) read_history( hp );
+#endif
+  }
+
+
+void cleanup_readline( void )
+  {
+#ifdef HAVE_READLINE
+  const char * const hp = history_path();
+  if( hp ) write_history( hp );
+#endif
   }
 
 
