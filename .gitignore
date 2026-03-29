@@ -1,0 +1,15 @@
+# Build artifacts
+*.o
+/ed
+/red
+/config.status
+/config.log
+/Makefile
+
+# Sync script cache
+/.cache/
+
+# Editor backups
+*~
+*.swp
+.DS_Store

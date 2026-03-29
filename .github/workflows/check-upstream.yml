@@ -1,0 +1,56 @@
+name: Check GNU Ed upstream
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install lzip
+        run: sudo apt-get install -y lzip
+
+      - name: Check for upstream update
+        id: check
+        run: |
+          latest=$(./scripts/sync-upstream.sh check 2>&1 || true)
+          echo "$latest"
+          if echo "$latest" | grep -q "Update available"; then
+            version=$(echo "$latest" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?$')
+            echo "update_available=true" >> "$GITHUB_OUTPUT"
+            echo "version=${version}" >> "$GITHUB_OUTPUT"
+          else
+            echo "update_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Import upstream update
+        if: steps.check.outputs.update_available == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          ./scripts/sync-upstream.sh update --auto
+
+      - name: Create pull request
+        if: steps.check.outputs.update_available == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ steps.check.outputs.version }}"
+          branch="upstream-update/${version}"
+          git checkout -b "${branch}"
+          git push -u origin "${branch}"
+          gh pr create \
+            --title "Update GNU Ed to ${version}" \
+            --body "Automated upstream import of GNU Ed ${version} from https://ftp.gnu.org/gnu/ed/" \
+            --base main \
+            --head "${branch}"
