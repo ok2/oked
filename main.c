@@ -46,9 +46,9 @@
 #include "ed.h"
 
 
-static const char * const program_name = "ed";
+static const char * const program_name = "oked";
 static const char * const program_year = "2026";
-static const char * invocation_name = "ed";		/* default value */
+static const char * invocation_name = "oked";		/* default value */
 
 static bool extended_regexp_ = false;	/* use EREs */
 static bool quiet = false;		/* suppress diagnostics */
@@ -71,7 +71,7 @@ static void show_help( void )
   fputs(
     "GNU ed is a line-oriented text editor. It is used to create, display,\n"
     "modify and otherwise manipulate text files, both interactively and via\n"
-    "shell scripts. A restricted version of ed, red, can only edit files in\n"
+    "shell scripts. A restricted version of oked, roked, can only edit files in\n"
     "the current directory and cannot execute shell commands. Ed is the\n"
     "'standard' text editor in the sense that it is the original editor for\n"
     "Unix, and thus widely available. For most purposes, however, it is\n"
@@ -112,9 +112,10 @@ static void show_help( void )
 
 static void show_version( void )
   {
-  printf( "GNU %s %s\n", program_name, PROGVERSION );
+  printf( "GNU %s %s (oked fork by Oleksandr Kozachuk)\n", program_name, PROGVERSION );
   printf( "Copyright (C) 1994 Andrew L. Moore.\n"
-          "Copyright (C) %s Antonio Diaz Diaz.\n", program_year );
+          "Copyright (C) %s Antonio Diaz Diaz.\n"
+          "Fork maintained by Oleksandr Kozachuk.\n", program_year );
   fputs( "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n"
          "This is free software: you are free to change and redistribute it.\n"
          "There is NO WARRANTY, to the extent permitted by law.\n", stdout );

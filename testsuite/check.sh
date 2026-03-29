@@ -9,7 +9,7 @@ LC_ALL=C
 export LC_ALL
 objdir=`pwd`
 testdir=`cd "$1" ; pwd`
-ED="${objdir}"/ed
+ED="${objdir}"/oked
 framework_failure() { echo "failure in testing framework" ; exit 1 ; }
 
 if [ ! -f "${ED}" ] || [ ! -x "${ED}" ] ; then
@@ -27,7 +27,7 @@ touch empty || framework_failure			# used also by r1.ed
 fail=0
 test_failed() { fail=1 ; printf " $1" ; [ -z "$2" ] || printf "($2)" ; }
 
-printf "testing ed-%s...\n" "$2"
+printf "testing oked-%s...\n" "$2"
 
 "${ED}" -q nx_file < empty				# no such file
 [ $? = 2 ] || test_failed $LINENO
@@ -52,12 +52,12 @@ echo "p" | "${ED}" -s +?[A-Z] test.txt | grep -q 'even' || test_failed $LINENO
 printf "a\nHello world!\n.\ne test.txt\nf foo.txt\nf\nh\nH\nH\nkx\nl\nn\np\nP\nP\ny\n.z\n# comment\n=\n!:\n.\ne test.txt\n8p\n" | "${ED}" -s | grep -q 'agrarian' || test_failed $LINENO
 echo "q" | "${ED}" -q 'name_with_bell.txt' && test_failed $LINENO
 echo "q" | "${ED}" -q --unsafe-names 'name_with_bell.txt' || test_failed $LINENO
-if touch 'café_iso.txt' 2> /dev/null ; then
-  rm -f 'café_iso.txt'
-  printf 'w café_iso.txt\nq\n' | "${ED}" -s test.txt || test_failed $LINENO
+if touch 'cafï¿½_iso.txt' 2> /dev/null ; then
+  rm -f 'cafï¿½_iso.txt'
+  printf 'w cafï¿½_iso.txt\nq\n' | "${ED}" -s test.txt || test_failed $LINENO
   printf 'w cafÃ©_utf.txt\nq\n' | "${ED}" -s test.txt || test_failed $LINENO
-  cmp 'café_iso.txt' 'cafÃ©_utf.txt' || test_failed $LINENO
-  rm -f 'café_iso.txt' 'cafÃ©_utf.txt'
+  cmp 'cafï¿½_iso.txt' 'cafÃ©_utf.txt' || test_failed $LINENO
+  rm -f 'cafï¿½_iso.txt' 'cafÃ©_utf.txt'
 fi
 
 if [ ${fail} != 0 ] ; then echo ; fi

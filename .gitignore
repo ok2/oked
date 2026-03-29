@@ -2,6 +2,8 @@
 *.o
 /ed
 /red
+/oked
+/roked
 /config.status
 /config.log
 /Makefile

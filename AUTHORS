@@ -1,10 +1,12 @@
 Since 2006 GNU ed is maintained by Antonio Diaz Diaz.
 
+This fork (oked) is maintained by Oleksandr Kozachuk.
+
 Before version 0.3, GNU ed and its man page were written and maintained
 (sic) by Andrew L. Moore.
 
 The original info page and GNUification of the code were graciously provided
-by François Pinard.
+by Franï¿½ois Pinard.
 
 -------------------
 
@@ -21,5 +23,5 @@ Karl Berry		<kb@cs.umb.edu>
 Theo Deraadt		<deraadt@newt.fsa.ca>
 Kaveh R. Ghazi		<ghazi@noc.rutgers.edu>
 Mike Haertel		<mike@ichips.intel.com>
-François Pinard		<pinard@iro.umontreal.ca>
+Franï¿½ois Pinard		<pinard@iro.umontreal.ca>
 Rodney Ruddock		<rodney@snowhite.cis.uoguelph.ca>

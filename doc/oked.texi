@@ -1,8 +1,8 @@
 \input texinfo @c -*-texinfo-*-
 @c %**start of header
-@setfilename ed.info
+@setfilename oked.info
 @documentencoding ISO-8859-15
-@settitle GNU @command{ed} Manual
+@settitle GNU @command{oked} Manual
 @finalout
 @c %**end of header
 
@@ -11,7 +11,7 @@
 
 @dircategory Basics
 @direntry
-* Ed: (ed).                     The GNU line editor
+* Oked: (oked).                 The GNU line editor
 @end direntry
 
 @copying
@@ -25,10 +25,10 @@ Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
 
 @ifnothtml
 @titlepage
-@title GNU ed
+@title GNU oked
 @subtitle The GNU line editor
-@subtitle for GNU ed version @value{VERSION}, @value{UPDATED}
-@author by Andrew L. Moore, François Pinard, and Antonio Diaz Diaz
+@subtitle for GNU oked version @value{VERSION}, @value{UPDATED}
+@author by Andrew L. Moore, Franï¿½ois Pinard, and Antonio Diaz Diaz
 
 @page
 @vskip 0pt plus 1filll
@@ -40,9 +40,9 @@ Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
 
 @ifnottex
 @node Top
-@top The GNU ed line editor
+@top The GNU oked line editor
 
-This manual is for GNU ed (version @value{VERSION}, @value{UPDATED}).
+This manual is for GNU oked (version @value{VERSION}, @value{UPDATED}).
 
 @menu
 * Overview::                        Overview of the @command{ed} command
@@ -61,7 +61,7 @@ This manual is for GNU ed (version @value{VERSION}, @value{UPDATED}).
 
 @sp 1
 @noindent
-Written by Andrew L. Moore, François Pinard, and Antonio Diaz Diaz
+Written by Andrew L. Moore, Franï¿½ois Pinard, and Antonio Diaz Diaz
 @insertcopying
 @end ifnottex
 
@@ -72,7 +72,7 @@ Written by Andrew L. Moore, François Pinard, and Antonio Diaz Diaz
 @uref{http://www.gnu.org/software/ed/ed.html,,GNU ed}
 is a line-oriented text editor. It is used to create, display, modify
 and otherwise manipulate text files, both interactively and via shell
-scripts. A restricted version of ed, red, can only edit files in the current
+scripts. A restricted version of oked, roked, can only edit files in the current
 directory and cannot execute shell commands. Ed is the 'standard' text
 editor in the sense that it is the original editor for Unix, and thus widely
 available. For most purposes, however, it is superseded by full-screen
