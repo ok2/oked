@@ -1,0 +1,9 @@
+H
+5w ./!.z
+6W ./!.z
+7,8W ./!.z
+9,13w \x2dhyphen\x2dprefixed\x2dfile
+0r !cat < ./!.z
+.r \x2dhyphen\x2dprefixed\x2dfile
+!rm -f ./!.z '\x2dhyphen\x2dprefixed\x2dfile'
+wq out.o

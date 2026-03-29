@@ -1,0 +1,12 @@
+H
+1,6!sort
+s/$/ 6/
+7,$!sort
+s/$/ 13/
+4,9!sort
+s/$/ 9/
+1!sort -c
+s/$/ 1/
+$!sort -c
+s/$/ 11/
+wq out.o

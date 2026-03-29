@@ -1,0 +1,45 @@
+Changes in version 1.22.5:
+
+Use 'sizeof active_list[0]' instead of 'sizeof (line_node **)'.
+(Reported by Mikel Olasagasti Uranga).
+
+A file name ending in slash '/' is now diagnosed as 'Invalid filename'
+instead of 'Is a directory'. (Reported by Douglas McIlroy).
+
+Changes in version 1.22.4:
+
+'make check' now skips the checking of file names with non-ASCII non-UTF-8
+characters on file systems where such characters are invalid.
+(Reported by Michael Daniels and Alexander Jones).
+
+Changes in version 1.22.3:
+
+The change to print the file name escaped when replaced into a shell command
+has been reverted. (Reported by Sören Tempel).
+
+When '--unsafe-names' is not specified, only the control characters \a, \b,
+\t, \v, \f, \n, \r, \033, and \177 are now rejected in file names.
+
+'make check' now checks file names with non-ASCII characters coded either in
+ISO-8859-1 or in UTF-8.
+
+'EXIT STATUS' now has its own section in the man page.
+
+Changes in version 1.22.2:
+
+Newline characters are no longer allowed in file names even if
+'--unsafe-names' is specified.
+
+The file name is now printed escaped also when replaced into a shell command.
+
+Changes in version 1.22.1:
+
+Ed now departs from POSIX and ignores SIGPIPE to prevent commands like
+'w !:' or ',!:' from terminating ed. A broken pipe is now detected as any
+other write error. (Reported by Sergei Trofimovich).
+
+Changes in version 1.22:
+
+The shell escape command (!) now accepts line addresses to filter the
+addressed lines through a shell command. (ex(1) style filter).
+(Suggested by Shawn Wagner, Andrew L. Moore, and John Cowan).
