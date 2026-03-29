@@ -20,7 +20,7 @@ objs = buffer.o carg_parser.o global.o highlight.o io.o main.o main_loop.o regex
 all : $(progname) r$(progname)
 
 $(progname) : $(objs)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(objs)
+	$(CC) $(CFLAGS) -o $@ $(objs) $(LDFLAGS)
 
 r$(progname) : r$(progname).in
 	cat $(VPATH)/r$(progname).in > $@
