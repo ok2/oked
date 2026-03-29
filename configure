@@ -1,5 +1,5 @@
 #! /bin/sh
-# configure script for GNU ed - The GNU line editor
+# configure script for GNU oked - The GNU line editor
 # Copyright (C) 2006-2026 Antonio Diaz Diaz.
 #
 # This configure script is free software: you have unlimited permission
@@ -220,7 +220,7 @@ echo "LDFLAGS = ${LDFLAGS}"
 echo "MAKEINFO = ${MAKEINFO}"
 rm -f Makefile
 cat > Makefile << EOF
-# Makefile for GNU ed - The GNU line editor
+# Makefile for GNU oked - The GNU line editor
 # Copyright (C) 2006-2026 Antonio Diaz Diaz.
 # This file was generated automatically by configure. Don't edit.
 #

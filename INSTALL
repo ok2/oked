@@ -12,17 +12,17 @@ Procedure
 ---------
 1. Unpack the archive if you have not done so already:
 
-	tar -xf ed[version].tar.lz
+	tar -xf oked[version].tar.lz
 or
-	lzip -cd ed[version].tar.lz | tar -xf -
+	lzip -cd oked[version].tar.lz | tar -xf -
 
-This creates the directory ./ed[version] containing the source code
+This creates the directory ./oked[version] containing the source code
 extracted from the archive.
 
-2. Change to ed directory and run configure.
+2. Change to oked directory and run configure.
    (Try 'configure --help' for usage instructions).
 
-	cd ed[version]
+	cd oked[version]
 	./configure
 
    If you choose a C standard, enable the POSIX features explicitly:
@@ -33,7 +33,7 @@ extracted from the archive.
 
 	make
 
-4. Optionally, type 'make check' to run the tests that come with ed.
+4. Optionally, type 'make check' to run the tests that come with oked.
 
 5. Type 'make install' to install the program and any data files and
    documentation. You need root privileges to install into a prefix owned
@@ -50,7 +50,7 @@ extracted from the archive.
 
 Another way
 -----------
-You can also compile ed into a separate directory.
+You can also compile oked into a separate directory.
 To do this, you must use a version of 'make' that supports the variable
 'VPATH', such as GNU 'make'. 'cd' to the directory where you want the
 object files and executables to go and run the 'configure' script.

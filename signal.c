@@ -64,7 +64,7 @@ static void sighup_handler( int signum )
   if( signum ) {}			/* keep compiler happy */
   if( mutex ) { sighup_pending = true; return; }
   sighup_pending = false;
-  const char hb[] = "ed.hup";
+  const char hb[] = "oked.hup";
   if( last_addr() <= 0 || !modified() ||
       write_file( hb, "w", 1, last_addr() ) >= 0 ) exit( 0 );
   const char * const hd = home_directory();

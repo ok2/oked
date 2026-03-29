@@ -69,13 +69,11 @@ bool traditional( void ) { return traditional_; }
 static void show_help( void )
   {
   fputs(
-    "GNU ed is a line-oriented text editor. It is used to create, display,\n"
-    "modify and otherwise manipulate text files, both interactively and via\n"
-    "shell scripts. A restricted version of oked, roked, can only edit files in\n"
-    "the current directory and cannot execute shell commands. Ed is the\n"
-    "'standard' text editor in the sense that it is the original editor for\n"
-    "Unix, and thus widely available. For most purposes, however, it is\n"
-    "superseded by full-screen editors.\n", stdout );
+    "GNU oked is a line-oriented text editor (fork of GNU ed). It is used to\n"
+    "create, display, modify and otherwise manipulate text files, both\n"
+    "interactively and via shell scripts. A restricted version of oked, roked,\n"
+    "can only edit files in the current directory and cannot execute shell\n"
+    "commands.\n", stdout );
   printf( "\nUsage: %s [options] [[+line] file]\n", invocation_name );
   fputs(
     "\nThe file name may be preceded by '+line', '+/RE', or '+?RE' to set the\n"
@@ -103,9 +101,9 @@ static void show_help( void )
     "0 for a normal exit, 1 for environmental problems (invalid command-line\n"
     "options, memory exhausted, command failed, etc), 2 for problems with the\n"
     "input file (file not found, buffer modified, I/O errors), 3 for an internal\n"
-    "consistency error (e.g., bug) which caused ed to panic.\n"
+    "consistency error (e.g., bug) which caused oked to panic.\n"
     "\nReport bugs to bug-ed@gnu.org\n"
-    "Ed home page: http://www.gnu.org/software/ed/ed.html\n"
+    "Upstream home page: http://www.gnu.org/software/ed/ed.html\n"
     "General help using GNU software: http://www.gnu.org/gethelp\n", stdout );
   }
 
