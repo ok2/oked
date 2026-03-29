@@ -279,6 +279,234 @@ static const char * input_history_path( void )
 
 
 #ifdef HAVE_READLINE
+
+/* Skip the address portion of an ed command line.
+   Return index of the command character (or len if only addresses). */
+static int skip_address( const char * const buf, const int len )
+  {
+  int i = 0;
+  while( i < len )
+    {
+    while( i < len && ( buf[i] == ' ' || buf[i] == '\t' ) ) ++i;
+    if( i >= len ) break;
+    const unsigned char c = buf[i];
+    if( c >= '0' && c <= '9' )
+      { while( i < len && buf[i] >= '0' && buf[i] <= '9' ) ++i; continue; }
+    if( c == '.' || c == '$' || c == '+' || c == '-' ||
+        c == ',' || c == ';' || c == '%' ) { ++i; continue; }
+    if( c == '\'' && i + 1 < len ) { i += 2; continue; }
+    if( c == '/' )
+      { ++i; while( i < len && buf[i] != '/' )
+        { if( buf[i] == '\\' && i + 1 < len ) ++i; ++i; }
+      if( i < len ) ++i; continue; }
+    if( c == '?' )
+      { ++i; while( i < len && buf[i] != '?' )
+        { if( buf[i] == '\\' && i + 1 < len ) ++i; ++i; }
+      if( i < len ) ++i; continue; }
+    break;
+    }
+  return i;
+  }
+
+
+/* Suffix completion state */
+static char suffix_candidates[20];
+static int suffix_gen_idx;
+
+/* Generator: returns text + one suffix candidate per call */
+static char * suffix_generator( const char * text, int state )
+  {
+  if( state == 0 ) suffix_gen_idx = 0;
+  if( !suffix_candidates[suffix_gen_idx] ) return NULL;
+  const int len = strlen( text );
+  char * match = (char *)malloc( len + 2 );
+  if( !match ) return NULL;
+  memcpy( match, text, len );
+  match[len] = suffix_candidates[suffix_gen_idx++];
+  match[len + 1] = 0;
+  return match;
+  }
+
+
+/* Fill suffix_candidates with available print suffixes (l, n, p) */
+static void get_print_candidates( const char * const buf,
+                                  const int from, const int to )
+  {
+  bool has_l = false, has_n = false, has_p = false;
+  int i;
+  for( i = from; i < to; ++i )
+    {
+    if( buf[i] == 'l' ) has_l = true;
+    else if( buf[i] == 'n' ) has_n = true;
+    else if( buf[i] == 'p' ) has_p = true;
+    }
+  int ci = 0;
+  if( !has_l ) suffix_candidates[ci++] = 'l';
+  if( !has_n ) suffix_candidates[ci++] = 'n';
+  if( !has_p ) suffix_candidates[ci++] = 'p';
+  suffix_candidates[ci] = 0;
+  }
+
+
+/* Fill suffix_candidates with available s-command flags.
+   Return true if cursor is in a completable flag position. */
+static bool get_s_candidates( const char * const buf,
+                              const int cmd_idx, const int len )
+  {
+  int i = cmd_idx + 1;
+  if( i >= len ) return false;		/* just 's', ambiguous */
+
+  const unsigned char c = buf[i];
+
+  /* repeat mode: first char after s is digit, g, p, or r */
+  if( ( c >= '1' && c <= '9' ) || c == 'g' || c == 'p' || c == 'r' )
+    {
+    bool has_g = false, has_p = false, has_r = false;
+    while( i < len )
+      {
+      const unsigned char ch = buf[i];
+      if( ch >= '0' && ch <= '9' )
+        { has_g = true;
+          while( i < len && buf[i] >= '0' && buf[i] <= '9' ) ++i;
+          continue; }
+      if( ch == 'g' ) { has_g = true; ++i; continue; }
+      if( ch == 'p' ) { has_p = true; ++i; continue; }
+      if( ch == 'r' ) { has_r = true; ++i; continue; }
+      break;
+      }
+    int ci = 0;
+    if( !has_g )
+      { int d; for( d = '1'; d <= '9'; ++d ) suffix_candidates[ci++] = d;
+        suffix_candidates[ci++] = 'g'; }
+    if( !has_p ) suffix_candidates[ci++] = 'p';
+    if( !has_r ) suffix_candidates[ci++] = 'r';
+    suffix_candidates[ci] = 0;
+    return ci > 0;
+    }
+
+  /* new pattern mode: first char is delimiter */
+  const unsigned char delim = c;
+  ++i;
+  /* skip pattern */
+  while( i < len && buf[i] != delim )
+    { if( buf[i] == '\\' && i + 1 < len ) ++i; ++i; }
+  if( i >= len ) return false;		/* still in pattern */
+  ++i;					/* skip 2nd delimiter */
+  /* skip replacement */
+  while( i < len && buf[i] != delim && buf[i] != '\n' )
+    { if( buf[i] == '\\' && i + 1 < len ) ++i; ++i; }
+  if( i >= len ) return false;		/* still in replacement */
+  if( buf[i] == delim ) ++i;		/* skip 3rd delimiter */
+
+  /* parse existing flags after 3rd delimiter */
+  bool has_count = false, has_g = false, has_ic = false;
+  bool has_l = false, has_n = false, has_p = false;
+  while( i < len )
+    {
+    const unsigned char ch = buf[i];
+    if( ch >= '1' && ch <= '9' )
+      { has_count = true;
+        while( i < len && buf[i] >= '0' && buf[i] <= '9' ) ++i;
+        continue; }
+    if( ch == 'g' ) { has_g = true; ++i; continue; }
+    if( ch == 'i' || ch == 'I' ) { has_ic = true; ++i; continue; }
+    if( ch == 'l' ) { has_l = true; ++i; continue; }
+    if( ch == 'n' ) { has_n = true; ++i; continue; }
+    if( ch == 'p' ) { has_p = true; ++i; continue; }
+    break;
+    }
+
+  int ci = 0;
+  if( !has_count && !has_g )
+    { int d; for( d = '1'; d <= '9'; ++d ) suffix_candidates[ci++] = d;
+      suffix_candidates[ci++] = 'g'; }
+  if( !has_ic ) suffix_candidates[ci++] = 'i';
+  if( !has_l ) suffix_candidates[ci++] = 'l';
+  if( !has_n ) suffix_candidates[ci++] = 'n';
+  if( !has_p ) suffix_candidates[ci++] = 'p';
+  suffix_candidates[ci] = 0;
+  return ci > 0;
+  }
+
+
+static char **ed_completion( const char * text, int start, int end )
+  {
+  (void)end;
+  const int cmd_idx = skip_address( rl_line_buffer, rl_end );
+
+  if( cmd_idx >= rl_end )
+    { rl_attempted_completion_over = 1; return NULL; }
+
+  const char cmd = rl_line_buffer[cmd_idx];
+
+  /* cursor past command word: completing a space-separated argument */
+  if( cmd_idx < start )
+    {
+    if( cmd == 'e' || cmd == 'E' || cmd == 'f' ||
+        cmd == 'r' || cmd == 'w' || cmd == 'W' || cmd == '!' )
+      return rl_completion_matches( text, rl_filename_completion_function );
+    rl_attempted_completion_over = 1;
+    return NULL;
+    }
+
+  /* cursor in same word as command: suffix/flag completion */
+  rl_attempted_completion_over = 1;
+
+  /* s command: special flag handling */
+  if( cmd == 's' )
+    {
+    if( get_s_candidates( rl_line_buffer, cmd_idx, rl_end ) )
+      return rl_completion_matches( text, suffix_generator );
+    return NULL;
+    }
+
+  /* determine suffix area start for commands with print suffixes */
+  int suf = cmd_idx + 1;
+  bool has_suffix = false;
+
+  switch( cmd )
+    {
+    /* simple commands: suffixes right after command letter */
+    case 'a': case 'c': case 'd': case 'h': case 'H':
+    case 'i': case 'j': case 'l': case 'n': case 'p':
+    case 'P': case 'q': case 'Q': case 'S': case 'u':
+    case 'x': case 'y': case '=':
+      has_suffix = true;
+      break;
+    /* k: mark char then suffixes */
+    case 'k':
+      if( cmd_idx + 1 < rl_end ) { suf = cmd_idx + 2; has_suffix = true; }
+      break;
+    /* z: optional digits then suffixes */
+    case 'z':
+      while( suf < rl_end && rl_line_buffer[suf] >= '0' &&
+             rl_line_buffer[suf] <= '9' ) ++suf;
+      has_suffix = true;
+      break;
+    /* G/V: pattern delimiter then suffixes */
+    case 'G': case 'V':
+      if( suf < rl_end )
+        {
+        const unsigned char delim = rl_line_buffer[suf];
+        ++suf;
+        while( suf < rl_end && rl_line_buffer[suf] != delim )
+          { if( rl_line_buffer[suf] == '\\' && suf + 1 < rl_end ) ++suf; ++suf; }
+        if( suf < rl_end ) { ++suf; has_suffix = true; }
+        }
+      break;
+    }
+
+  if( has_suffix )
+    {
+    get_print_candidates( rl_line_buffer, suf, rl_end );
+    if( suffix_candidates[0] )
+      return rl_completion_matches( text, suffix_generator );
+    }
+
+  return NULL;
+  }
+
+
 static void switch_to_input_history( void )
   {
   if( in_input_mode ) return;
@@ -288,6 +516,7 @@ static void switch_to_input_history( void )
   stifle_history( 1000 );
   hp = input_history_path();
   if( hp ) read_history( hp );
+  rl_bind_key( '\t', rl_insert );
   in_input_mode = true;
   }
 
@@ -300,6 +529,7 @@ static void switch_to_cmd_history( void )
   stifle_history( 1000 );
   hp = history_path();
   if( hp ) read_history( hp );
+  rl_bind_key( '\t', rl_complete );
   in_input_mode = false;
   }
 #endif
@@ -352,6 +582,7 @@ void init_readline( void )
   {
 #ifdef HAVE_READLINE
   rl_readline_name = "ed";
+  rl_attempted_completion_function = ed_completion;
   using_history();
   stifle_history( 1000 );
   const char * const hp = history_path();
