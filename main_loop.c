@@ -43,6 +43,8 @@ static bool read_only = false;		/* loaded file is not writable */
 static bool verbose = false;		/* print all error messages */
 
 
+const char * get_def_filename( void ) { return def_filename; }
+
 int first_e_command( const char * const filename )
   { return read_file( filename, 0, &read_only ); }
 
@@ -676,6 +678,13 @@ pflabel:      if( !set_addr_range2( addr_cnt ) ||
               addr = read_file( fnp[0] ? fnp : def_filename, second_addr, 0 );
               if( addr < 0 ) return ERR;
               if( addr ) set_modified( true );
+              break;
+    case 'S': if( unexpected_address( addr_cnt ) ||
+                  !get_command_suffix( ibufpp, &pflags ) ) return ERR;
+              if( restricted() )
+                { set_error_msg( "Highlighting not available in restricted mode" );
+                  return ERR; }
+              toggle_highlight();
               break;
     case 's': if( !command_s( ibufpp, &pflags, addr_cnt, isglobal ) )
                 return ERR;

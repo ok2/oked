@@ -97,6 +97,7 @@ static void show_help( void )
     "  -v, --verbose              be verbose; equivalent to the 'H' command\n"
     "      --strip-trailing-cr    strip carriage returns at end of text lines\n"
     "      --unsafe-names         allow control characters in file names\n"
+    "  -S, --syntax=LANG          enable syntax highlighting (auto, c, python, ...)\n"
     "\n*Exit status*\n"
     "0 for a normal exit, 1 for environmental problems (invalid command-line\n"
     "options, memory exhausted, command failed, etc), 2 for problems with the\n"
@@ -238,6 +239,7 @@ int main( const int argc, const char * const argv[] )
     { 'V', "version",              ap_no  },
     { opt_cr, "strip-trailing-cr", ap_no  },
     { opt_un, "unsafe-names",      ap_no  },
+    { 'S', "syntax",               ap_yes },
     { 0, 0,                        ap_no  } };
 
   Arg_parser parser;
@@ -268,6 +270,7 @@ int main( const int argc, const char * const argv[] )
       case 'V': show_version(); return 0;
       case opt_cr: strip_cr_ = true; break;
       case opt_un: safe_names = false; break;
+      case 'S': if( set_syntax( arg ) ) break; else return 1;
       default: show_error( "internal error: uncaught option.", 0, false );
                return 3;
       }

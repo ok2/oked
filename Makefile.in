@@ -8,7 +8,7 @@ INSTALL_DATA = $(INSTALL) -m 644
 SHELL = /bin/sh
 CAN_RUN_INSTALLINFO = $(SHELL) -c "install-info --version" > /dev/null 2>&1
 
-objs = buffer.o carg_parser.o global.o io.o main.o main_loop.o regex.o signal.o
+objs = buffer.o carg_parser.o global.o highlight.o io.o main.o main_loop.o regex.o signal.o
 
 
 .PHONY : all install install-bin install-info install-man-base install-man \

@@ -93,6 +93,9 @@ static void print_line( const char * p, int len, const int pflags )
 /* print a range of lines to stdout */
 bool print_lines( int from, const int to, const int pflags )
   {
+  if( highlight_enabled() && !( pflags & pf_l ) && !scripted() && isatty( 1 ) )
+    return print_lines_highlighted( from, to, pflags );
+
   line_node * const ep = search_line_node( inc_addr( to ) );
   line_node * bp = search_line_node( from );
 

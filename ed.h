@@ -97,6 +97,13 @@ const line_node * next_active_node( void );
 bool set_active_node( const line_node * const lp );
 void unset_active_nodes( const line_node * bp, const line_node * const ep );
 
+/* defined in highlight.c */
+bool highlight_enabled( void );
+void toggle_highlight( void );
+void set_highlight( const bool enable );
+bool set_syntax( const char * const lang );
+bool print_lines_highlighted( int from, const int to, const int pflags );
+
 /* defined in io.c */
 unsigned char escchar( const unsigned char ch );
 bool get_extended_line( const char ** const ibufpp, int * const lenp,
@@ -127,6 +134,7 @@ bool strip_cr( void );
 bool traditional( void );
 
 /* defined in main_loop.c */
+const char * get_def_filename( void );
 const char * error_msg( void );
 int first_e_command( const char * const filename );
 void invalid_address( void );
