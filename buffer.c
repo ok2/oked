@@ -124,16 +124,16 @@ bool append_lines( const char ** const ibufpp, const int addr,
     {
     if( !isglobal )
       {
-      *ibufpp = get_stdin_line( &size );
-      if( !*ibufpp ) return false;			/* error */
-      if( size <= 0 ) return true;			/* EOF */
+      *ibufpp = get_tty_input_line( &size );
+      if( !*ibufpp ) { end_input_mode(); return false; }	/* error */
+      if( size <= 0 ) { end_input_mode(); return true; }	/* EOF */
       }
     else
       {
       if( !**ibufpp ) return true;
       for( size = 0; (*ibufpp)[size++] != '\n'; ) ;
       }
-    if( size == 2 && **ibufpp == '.' ) { *ibufpp += size; return true; }
+    if( size == 2 && **ibufpp == '.' ) { end_input_mode(); *ibufpp += size; return true; }
     disable_interrupts();
     if( insert ) { insert = false; if( current_addr_ > 0 ) --current_addr_; }
     if( !put_sbuf_line( *ibufpp, size ) )

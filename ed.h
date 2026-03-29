@@ -110,6 +110,8 @@ bool get_extended_line( const char ** const ibufpp, int * const lenp,
                         const bool strip_escaped_newlines );
 const char * get_stdin_line( int * const sizep );
 const char * get_tty_line( int * const sizep, const char * const prompt );
+const char * get_tty_input_line( int * const sizep );
+void end_input_mode( void );
 void init_readline( void );
 void cleanup_readline( void );
 unsigned linenum( void );

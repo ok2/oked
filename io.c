@@ -34,6 +34,10 @@
 static const line_node * unterminated_line = 0;	/* last line has no '\n' */
 static unsigned linenum_ = 0;			/* script line number */
 
+#ifdef HAVE_READLINE
+static bool in_input_mode = false;
+#endif
+
 unsigned linenum( void ) { return linenum_; }
 
 void reset_unterminated_line( void ) { unterminated_line = 0; }
@@ -256,6 +260,94 @@ static const char * history_path( void )
   }
 
 
+static const char * input_history_path( void )
+  {
+  static char * path = 0;
+  if( !path )
+    {
+    const char * const hd = home_directory();
+    if( !hd || !hd[0] ) return 0;
+    const int hdlen = strlen( hd );
+    const char hist[] = "/.ed_input_history";
+    path = (char *)malloc( hdlen + sizeof hist );
+    if( !path ) return 0;
+    memcpy( path, hd, hdlen );
+    memcpy( path + hdlen, hist, sizeof hist );
+    }
+  return path;
+  }
+
+
+#ifdef HAVE_READLINE
+static void switch_to_input_history( void )
+  {
+  if( in_input_mode ) return;
+  const char * hp = history_path();
+  if( hp ) write_history( hp );
+  clear_history();
+  stifle_history( 1000 );
+  hp = input_history_path();
+  if( hp ) read_history( hp );
+  in_input_mode = true;
+  }
+
+static void switch_to_cmd_history( void )
+  {
+  if( !in_input_mode ) return;
+  const char * hp = input_history_path();
+  if( hp ) write_history( hp );
+  clear_history();
+  stifle_history( 1000 );
+  hp = history_path();
+  if( hp ) read_history( hp );
+  in_input_mode = false;
+  }
+#endif
+
+
+void end_input_mode( void )
+  {
+#ifdef HAVE_READLINE
+  if( isatty( 0 ) ) switch_to_cmd_history();
+#endif
+  }
+
+
+/* Read a line of text from stdin using readline in input mode.
+   Add non-empty lines to input history.
+   Return pointer to buffer and line size (including trailing newline),
+   or 0 if error, or *sizep = 0 if EOF.
+*/
+const char * get_tty_input_line( int * const sizep )
+  {
+#ifdef HAVE_READLINE
+  if( isatty( 0 ) )
+    {
+    static char * buf = 0;
+    static int bufsz = 0;
+    switch_to_input_history();
+    char * line = readline( "" );
+    if( !line )				/* EOF */
+      {
+      if( !resize_buffer( &buf, &bufsz, 2 ) ) { *sizep = 0; return 0; }
+      buf[0] = 0; *sizep = 0; return buf;
+      }
+    const int len = strlen( line );
+    if( !resize_buffer( &buf, &bufsz, len + 2 ) )
+      { free( line ); *sizep = 0; return 0; }
+    memcpy( buf, line, len );
+    buf[len] = '\n'; buf[len + 1] = 0;
+    if( len > 0 ) add_history( line );
+    free( line );
+    ++linenum_;
+    *sizep = len + 1;
+    return buf;
+    }
+#endif
+  return get_stdin_line( sizep );
+  }
+
+
 void init_readline( void )
   {
 #ifdef HAVE_READLINE
@@ -264,6 +356,7 @@ void init_readline( void )
   stifle_history( 1000 );
   const char * const hp = history_path();
   if( hp ) read_history( hp );
+  in_input_mode = false;
 #endif
   }
 
@@ -271,7 +364,11 @@ void init_readline( void )
 void cleanup_readline( void )
   {
 #ifdef HAVE_READLINE
-  const char * const hp = history_path();
+  const char * hp;
+  if( in_input_mode )
+    hp = input_history_path();
+  else
+    hp = history_path();
   if( hp ) write_history( hp );
 #endif
   }

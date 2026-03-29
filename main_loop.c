@@ -827,6 +827,7 @@ int main_loop( const bool initial_error, const bool loose )
   if( status == 0 )			/* direct invocation of setjmp */
     { enable_interrupts(); if( initial_error ) status = err_status = 1; }
   else { status = -1; fputs( "\n?\n", stdout ); set_error_msg( "Interrupt" );
+         end_input_mode();
          if( get_tmpname( false ) ) remove( get_tmpname( false ) ); }
 
   while( true )
