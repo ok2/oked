@@ -110,7 +110,7 @@ static void show_help( void )
 
 static void show_version( void )
   {
-  printf( "GNU %s %s (oked fork by Oleksandr Kozachuk)\n", program_name, PROGVERSION );
+  printf( "GNU Ed %s (oked fork by Oleksandr Kozachuk)\n", PROGVERSION );
   printf( "Copyright (C) 1994 Andrew L. Moore.\n"
           "Copyright (C) %s Antonio Diaz Diaz.\n"
           "Fork maintained by Oleksandr Kozachuk.\n", program_year );
