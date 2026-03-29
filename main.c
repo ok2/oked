@@ -83,7 +83,8 @@ static void show_help( void )
     "matching the regular expression 'RE'.\n"
     "\nStart edit by reading in 'file' if given.\n"
     "If 'file' begins with a '!', read output of shell command.\n"
-    "\nThe environment variable LINES can be used to set the initial window size.\n"
+    "\nThe environment variable ED_OPTIONS can be used to set default options.\n"
+    "The environment variable LINES can be used to set the initial window size.\n"
     "\nOptions:\n"
     "  -h, --help                 display this help and exit\n"
     "  -V, --version              output version information and exit\n"
@@ -219,6 +220,70 @@ bool may_access_filename( const char * const name )
   }
 
 
+/* Build a merged argv from an environment variable and the real argv.
+   Env tokens are inserted after argv[0] so real args override them.
+   Returns new argc; sets *new_argv_p to merged array (or original argv). */
+static int build_argv_from_env( const char * const envname,
+                                const int argc, const char * const argv[],
+                                const char *** new_argv_p )
+  {
+  const char * const env = getenv( envname );
+  if( !env || !env[0] ) { *new_argv_p = (const char **)argv; return argc; }
+
+  /* tokenize env string: split on whitespace, respect single/double quotes */
+  const int envlen = strlen( env );
+  char * const buf = (char *)malloc( envlen + 1 );
+  if( !buf ) { *new_argv_p = (const char **)argv; return argc; }
+
+  const char ** tokens = 0;
+  int ntokens = 0, tcap = 0;
+  int i = 0;
+  while( i < envlen )
+    {
+    while( i < envlen && ( env[i] == ' ' || env[i] == '\t' ) ) ++i;
+    if( i >= envlen ) break;
+    int j = 0;
+    while( i < envlen && env[i] != ' ' && env[i] != '\t' )
+      {
+      if( env[i] == '\'' || env[i] == '"' )
+        {
+        const char q = env[i++];
+        while( i < envlen && env[i] != q ) buf[j++] = env[i++];
+        if( i < envlen ) ++i;		/* skip closing quote */
+        }
+      else buf[j++] = env[i++];
+      }
+    buf[j] = 0;
+    if( ntokens >= tcap )
+      {
+      tcap = tcap ? tcap * 2 : 8;
+      const char ** t = (const char **)realloc( tokens, tcap * sizeof *t );
+      if( !t ) { free( tokens ); free( buf ); *new_argv_p = (const char **)argv; return argc; }
+      tokens = t;
+      }
+    tokens[ntokens] = (const char *)malloc( j + 1 );
+    if( !tokens[ntokens] ) { free( tokens ); free( buf );
+      *new_argv_p = (const char **)argv; return argc; }
+    memcpy( (char *)tokens[ntokens], buf, j + 1 );
+    ++ntokens;
+    }
+  free( buf );
+  if( ntokens == 0 ) { free( tokens ); *new_argv_p = (const char **)argv; return argc; }
+
+  /* merge: argv[0] + env tokens + argv[1..] */
+  const int new_argc = argc + ntokens;
+  const char ** new_argv = (const char **)malloc( ( new_argc + 1 ) * sizeof *new_argv );
+  if( !new_argv ) { free( tokens ); *new_argv_p = (const char **)argv; return argc; }
+  new_argv[0] = argv[0];
+  for( i = 0; i < ntokens; ++i ) new_argv[1 + i] = tokens[i];
+  for( i = 1; i < argc; ++i ) new_argv[ntokens + i] = argv[i];
+  new_argv[new_argc] = 0;
+  free( tokens );
+  *new_argv_p = new_argv;
+  return new_argc;
+  }
+
+
 int main( const int argc, const char * const argv[] )
   {
   bool initial_error = false;		/* fatal error reading file */
@@ -245,7 +310,11 @@ int main( const int argc, const char * const argv[] )
   Arg_parser parser;
   if( argc > 0 ) invocation_name = argv[0];
 
-  if( !ap_init( &parser, argc, argv, options, 0 ) )
+  const char ** merged_argv;
+  const int merged_argc =
+    build_argv_from_env( "ED_OPTIONS", argc, argv, &merged_argv );
+
+  if( !ap_init( &parser, merged_argc, merged_argv, options, 0 ) )
     { show_error( "Memory exhausted.", 0, false ); return 1; }
   if( ap_error( &parser ) )				/* bad option */
     { show_error( ap_error( &parser ), 0, true ); return 1; }
