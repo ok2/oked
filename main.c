@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <locale.h>
 
 #include "carg_parser.h"
@@ -346,7 +347,7 @@ int main( const int argc, const char * const argv[] )
 
   setlocale( LC_ALL, "" );
   if( !init_buffers() ) return 1;
-  init_readline();
+  if( isatty( 0 ) ) init_readline();
 
   const char * start_re_arg = 0;		/* '+/RE' or '+?RE' */
   int start_addr = 0;				/* '+line' */
@@ -394,6 +395,6 @@ int main( const int argc, const char * const argv[] )
     }
   ap_free( &parser );
   const int ret = main_loop( initial_error, loose );
-  cleanup_readline();
+  if( isatty( 0 ) ) cleanup_readline();
   return ret;
   }
