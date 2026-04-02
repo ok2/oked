@@ -17,6 +17,7 @@
 */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,7 +52,8 @@ bool set_syntax( const char * const lang )
 enum Highlighter { HL_NONE = 0, HL_BAT, HL_PYGMENTIZE, HL_SOURCE_HIGHLIGHT,
                    HL_HIGHLIGHT };
 
-static int cached_highlighter = -1;		/* -1 = not yet probed */
+static bool hl_avail[5] = { false, false, false, false, false };
+static bool hl_probed = false;
 
 static bool command_exists( const char * const name )
   {
@@ -78,15 +80,25 @@ static bool command_exists( const char * const name )
   }
 
 
-static int find_highlighter( void )
+static void probe_highlighters( void )
   {
-  if( cached_highlighter >= 0 ) return cached_highlighter;
-  if( command_exists( "bat" ) ) cached_highlighter = HL_BAT;
-  else if( command_exists( "pygmentize" ) ) cached_highlighter = HL_PYGMENTIZE;
-  else if( command_exists( "source-highlight" ) ) cached_highlighter = HL_SOURCE_HIGHLIGHT;
-  else if( command_exists( "highlight" ) ) cached_highlighter = HL_HIGHLIGHT;
-  else cached_highlighter = HL_NONE;
-  return cached_highlighter;
+  if( hl_probed ) return;
+  hl_avail[HL_BAT] = command_exists( "bat" );
+  hl_avail[HL_PYGMENTIZE] = command_exists( "pygmentize" );
+  hl_avail[HL_SOURCE_HIGHLIGHT] = command_exists( "source-highlight" );
+  hl_avail[HL_HIGHLIGHT] = command_exists( "highlight" );
+  hl_probed = true;
+  }
+
+/* Return the next available highlighter starting after 'after'.
+   Pass HL_NONE to get the first available. */
+static int next_highlighter( const int after )
+  {
+  int i;
+  probe_highlighters();
+  for( i = ( after < HL_BAT ? HL_BAT : after + 1 ); i <= HL_HIGHLIGHT; ++i )
+    if( hl_avail[i] ) return i;
+  return HL_NONE;
   }
 
 
@@ -137,6 +149,7 @@ static const char * detect_language( const char * const filename )
     { "d", "d" },
     { "m", "objc" },
     { "mm", "objcpp" },
+    { "fth", "forth" }, { "4th", "forth" }, { "forth", "forth" },
     { NULL, NULL }
     };
 
@@ -192,24 +205,16 @@ static int build_argv( char * argv[], const int hl,
   }
 
 
-bool print_lines_highlighted( int from, const int to, const int pflags )
+/* Try a single highlighter; return true if it produced output. */
+static bool try_highlighter( const int hl, const char * const lang,
+                             const char * const filename,
+                             const int from, const int to, const int pflags )
   {
-  const int hl = find_highlighter();
-  if( hl == HL_NONE )
-    return print_lines( from, to, pflags );	/* silent fallback */
-
-  const char * const filename = get_def_filename();
-  const char * const lang = forced_lang ? forced_lang : detect_language( filename );
-
   char * argv[12];
-  if( build_argv( argv, hl, lang, filename ) == 0 )
-    return print_lines( from, to, pflags );
-
-  if( !from ) { invalid_address(); return false; }
+  if( build_argv( argv, hl, lang, filename ) == 0 ) return false;
 
   int stdin_pipe[2], stdout_pipe[2];
-  if( pipe( stdin_pipe ) < 0 || pipe( stdout_pipe ) < 0 )
-    return print_lines( from, to, pflags );
+  if( pipe( stdin_pipe ) < 0 || pipe( stdout_pipe ) < 0 ) return false;
 
   disable_interrupts();
   const pid_t pid = fork();
@@ -218,12 +223,14 @@ bool print_lines_highlighted( int from, const int to, const int pflags )
     close( stdin_pipe[0] ); close( stdin_pipe[1] );
     close( stdout_pipe[0] ); close( stdout_pipe[1] );
     enable_interrupts();
-    return print_lines( from, to, pflags );
+    return false;
     }
 
   if( pid == 0 )
     {
     /* child */
+    const int devnull = open( "/dev/null", O_WRONLY );
+    if( devnull >= 0 ) { dup2( devnull, STDERR_FILENO ); close( devnull ); }
     close( stdin_pipe[1] ); close( stdout_pipe[0] );
     dup2( stdin_pipe[0], STDIN_FILENO );
     dup2( stdout_pipe[1], STDOUT_FILENO );
@@ -253,6 +260,7 @@ bool print_lines_highlighted( int from, const int to, const int pflags )
   close( stdin_pipe[1] );
 
   /* read highlighted output, skip first (from-1) lines, print the rest */
+  bool got_output = false;
     {
     FILE * const fp = fdopen( stdout_pipe[0], "r" );
     if( fp )
@@ -263,6 +271,7 @@ bool print_lines_highlighted( int from, const int to, const int pflags )
       int print_addr = from;
       while( getline( &line, &linesz, fp ) >= 0 )
         {
+        got_output = true;
         ++linenum;
         if( linenum >= from && linenum <= to )
           {
@@ -285,5 +294,20 @@ bool print_lines_highlighted( int from, const int to, const int pflags )
   int status;
   waitpid( pid, &status, 0 );
   enable_interrupts();
-  return true;
+  return got_output;
+  }
+
+
+bool print_lines_highlighted( int from, const int to, const int pflags )
+  {
+  if( !from ) { invalid_address(); return false; }
+
+  const char * const filename = get_def_filename();
+  const char * const lang = forced_lang ? forced_lang : detect_language( filename );
+
+  int hl = HL_NONE;
+  while( ( hl = next_highlighter( hl ) ) != HL_NONE )
+    if( try_highlighter( hl, lang, filename, from, to, pflags ) ) return true;
+
+  return print_lines( from, to, pflags );	/* all failed; plain fallback */
   }
