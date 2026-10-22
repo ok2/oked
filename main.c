@@ -103,6 +103,8 @@ static void show_help( void )
     "options, memory exhausted, command failed, etc), 2 for problems with the\n"
     "input file (file not found, buffer modified, I/O errors), 3 for an internal\n"
     "consistency error (e.g., bug) which caused oked to panic.\n"
+    "\n*See also*\n"
+    "regex(7)\n"
     "\nReport bugs to bug-ed@gnu.org\n"
     "Upstream home page: http://www.gnu.org/software/ed/ed.html\n"
     "General help using GNU software: http://www.gnu.org/gethelp\n", stdout );
@@ -127,7 +129,6 @@ void print_escaped( const char * p, const bool to_stdout )
   for( ; *p; ++p )
     {
     const unsigned char ch = *p;
-    if( ch == '\\' ) { putc( ch, fp ); putc( ch, fp ); continue; }
     if( ch >= 32 && ch <= 126 ) { putc( ch, fp ); continue; }
     putc( '\\', fp );
     const char e = escchar( ch ); if( e ) { putc( e, fp ); continue; }
